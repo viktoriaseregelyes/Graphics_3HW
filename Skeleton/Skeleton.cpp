@@ -33,104 +33,101 @@
 //=============================================================================================
 #include "framework.h"
 
-const char * const vertexSource = R"(
-	#version 330				// Shader 3.3
-	precision highp float;		// normal floats, makes no difference on desktop computers
+const char* const vertexSource = R"(
+#version 330
+precision highp float;
 
-	uniform mat4 MVP;			// uniform variable, the Model-View-Projection transformation matrix
-	layout(location = 0) in vec2 vp;	// Varying input: vp = vertex position is expected in attrib array 0
+layout(location = 0) in vec4 position;
 
-	void main() {
-		gl_Position = vec4(vp.x, vp.y, 0, 1) * MVP;		// transform vp from modeling space to normalized device space
-	}
+void main() {
+    gl_Position = position;
+}
 )";
 
-const char * const fragmentSource = R"(
-	#version 330			// Shader 3.3
-	precision highp float;	// normal floats, makes no difference on desktop computers
-	
-	uniform vec3 color;		// uniform variable, the color of the primitive
-	out vec4 outColor;		// computed color of the current pixel
+const char* const fragmentSource = R"(
+#version 330
+precision highp float;
 
-	void main() {
-		outColor = vec4(color, 1);	// computed color is the color of the primitive
-	}
+out vec4 outColor;
+
+void main() {
+    outColor = vec4(1, 0, 0, 1);
+}
 )";
 
-GPUProgram gpuProgram;
+GPUProgram gpuProgram(false);
 unsigned int vao;
-
+int frame = 0;
 
 void onInitialization() {
-	glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, windowWidth, windowHeight);
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
-	unsigned int vbo;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    unsigned int vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    float vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	float vertices[] = { -0.8f, -0.8f, -0.6f, 1.0f, 0.8f, -0.2f };
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	gpuProgram.create(vertexSource, fragmentSource, "outColor");
+    gpuProgram.create(vertexSource, fragmentSource, "outColor");
 }
 
+// LEADAS ELOTT VEDD KI
+#include <fstream>
+#include <sstream>
+// VEGE
+
 void onDisplay() {
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-	int location = glGetUniformLocation(gpuProgram.getId(), "color");
-	glUniform3f(location, 0.0f, 1.0f, 0.0f);
+    // LEADAS ELOTT VEDD KI
 
-	float MVPtransf[4][4] = { 1, 0, 0, 0,
-							  0, 1, 0, 0,
-							  0, 0, 1, 0,
-							  0, 0, 0, 1 };
+    std::string newVertexSrc;
+    std::string newFragmentSrc;
+    std::string line;
+    std::ifstream vfile("C:\\Users\\User\\Desktop\\Egyetem\\4. félév\\Grafika\\GrafikaHaziCsomag2\\GrafikaHaziCsomag\\Programs\\Skeleton\\Skeleton\\vertex.vert");
+    while (std::getline(vfile, line)) {
+        newVertexSrc += line + "\n";
+    }
+    vfile.close();
+    std::ifstream ffile("C:\\Users\\User\\Desktop\\Egyetem\\4. félév\\Grafika\\GrafikaHaziCsomag2\\GrafikaHaziCsomag\\Programs\\Skeleton\\Skeleton\\fragment.frag");
+    while (std::getline(ffile, line)) {
+        newFragmentSrc += line + "\n";
+    }
+    ffile.close();
 
-	location = glGetUniformLocation(gpuProgram.getId(), "MVP");
-	glUniformMatrix4fv(location, 1, GL_TRUE, &MVPtransf[0][0]);
+    GPUProgram gpuProgram(false);
+    gpuProgram.create(newVertexSrc.c_str(), newFragmentSrc.c_str(), "outColor");
 
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+    // VEGE
 
-	glutSwapBuffers();
+    gpuProgram.setUniform((float)frame, "frame");
+    frame++;
+
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glutSwapBuffers();
+    glutPostRedisplay();
 }
 
 void onKeyboard(unsigned char key, int pX, int pY) {
-	if (key == 'd') glutPostRedisplay();
 }
 
 void onKeyboardUp(unsigned char key, int pX, int pY) {
 }
 
 void onMouseMotion(int pX, int pY) {
-	float cX = 2.0f * pX / windowWidth - 1;
-	float cY = 1.0f - 2.0f * pY / windowHeight;
-	printf("Mouse moved to (%3.2f, %3.2f)\n", cX, cY);
 }
 
 void onMouse(int button, int state, int pX, int pY) {
-	float cX = 2.0f * pX / windowWidth - 1;
-	float cY = 1.0f - 2.0f * pY / windowHeight;
-
-	char * buttonStat;
-	switch (state) {
-	case GLUT_DOWN: buttonStat = "pressed"; break;
-	case GLUT_UP:   buttonStat = "released"; break;
-	}
-
-	switch (button) {
-	case GLUT_LEFT_BUTTON:   printf("Left button %s at (%3.2f, %3.2f)\n", buttonStat, cX, cY);   break;
-	case GLUT_MIDDLE_BUTTON: printf("Middle button %s at (%3.2f, %3.2f)\n", buttonStat, cX, cY); break;
-	case GLUT_RIGHT_BUTTON:  printf("Right button %s at (%3.2f, %3.2f)\n", buttonStat, cX, cY);  break;
-	}
 }
 
 void onIdle() {
-	long time = glutGet(GLUT_ELAPSED_TIME);
 }
