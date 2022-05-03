@@ -96,7 +96,7 @@ public:
 	Camera() {
 		asp = 1;
 		fov = 80.0f * (float)M_PI / 180.0f;
-		fp = 0.1; bp = 100;
+		fp = 0.1f; bp = 100;
 	}
 	mat4 V() {
 		vec3 w = normalize(wEye - wLookat);
@@ -108,10 +108,10 @@ public:
 			0, 0, 0, 1);
 	}
 	mat4 P() {
-		return mat4(1 / (tan(fov / 2)*asp), 0, 0, 0,
-			0, 1 / tan(fov / 2), 0, 0,
-			0, 0, -(fp + bp) / (bp - fp), -1,
-			0, 0, -2 * fp*bp / (bp - fp), 0);
+		return mat4(1 / (tanf(fov / 2)*asp), 0, 0, 0,
+					0, 1 / tanf(fov / 2), 0, 0,
+					0, 0, -(fp + bp) / (bp - fp), -1,
+					0, 0, -2 * fp*bp / (bp - fp), 0);
 	}
 	void SetUniform() {
 		int location = glGetUniformLocation(gpuProgram->getId(), "wEye");
@@ -221,7 +221,7 @@ public:
 
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
-		vd.normal = vec3(cosf(u * 2.0f * M_PI) * sin(v*M_PI), sinf(u * 2.0f * M_PI) * sinf(v*M_PI), cosf(v*M_PI));
+		vd.normal = vec3(cosf(u * 2.0f * M_PI) * sinf(v*M_PI), sinf(u * 2.0f * M_PI) * sinf(v*M_PI), cosf(v*M_PI));
 		vd.position = vd.normal * r;
 		vd.texcoord = vec2(u, v);
 		return vd;
@@ -239,7 +239,7 @@ public:
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
 		float U = u * 2 * M_PI;
-		vd.normal = vec3(cos(U) * v, sin(U) * v, 0);
+		vd.normal = vec3(cosf(U) * v, sinf(U) * v, 0);
 		vd.position = vd.normal * r;
 		vd.texcoord = vec2(u, v);
 		return vd;
@@ -279,7 +279,7 @@ public:
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
 		float U = u * 2 * M_PI, V = v * height;
-		vd.normal = vec3(sqrt(v) * sin(U) * r, sqrt(v) * cos(U) * r, 0);
+		vd.normal = vec3(sqrtf(v * M_PI) * sinf(U) * r, sqrtf(v * M_PI) * cosf(U) * r, v * M_PI);
 		vd.position = vd.normal + vec3(0, 0, V);
 		vd.texcoord = vec2(u, v);
 		return vd;
@@ -305,74 +305,84 @@ class Lamp {
 	Conic* con;
 	Paraboloid* para;
 
-	float dleftarm_angle, drightarm_angle, dleftleg_angle, drightleg_angle;
-	float leftLegAngle, rightLegAngle, leftArmAngle, rightArmAngle, leftToeAngle, rightToeAngle;
 	float forward, up;
+	float angle = 200;
+	boolean bAngle = false;
+
 public:
 	Lamp(Material* _m) {
 		material = _m;
-		arm = new Cylinder(0.7, 10.0);
-		feet = new Cylinder(6.0, 1);
-		joint = new Sphere(1.0);
-		con = new Conic(6.0);
-		para = new Paraboloid(7.0, 5.0);
+		arm = new Cylinder(0.5f, 10.0f);
+		feet = new Cylinder(6.0f, 1.0f);
+		joint = new Sphere(0.8f);
+		con = new Conic(6.0f);
+		para = new Paraboloid(4.0f, 3.0f);
 		forward = 0;
 		up = 5;
 	}
-	float Forward() { return forward; }
 
 	void Animate(float dt) {
-		if (forward < 105) {
-			forward += 0.3 * dt;
+		if (!bAngle && angle < 340) {
+			angle += dt;
+			if(angle >= 340)
+				bAngle = true;
 		}
-		else {
-			up -= 2 * dt;
+		else if(bAngle && angle > 200) {
+			angle -= dt;
+			if (angle <= 200)
+				bAngle = false;
 		}
 	}
 
 	void DrawHead(mat4 M, mat4 Minv) {
 		joint->Draw(M, Minv);
 
-		M = RotationMatrix(270 * M_PI / 180, vec3(1, 0, 0)) * M;
-		Minv = Minv * RotationMatrix(-270 * M_PI / 180, vec3(1, 0, 0));
+		M = TranslateMatrix(vec3(0, 0, 0.8f)) * RotationMatrix(270 * M_PI / 180, vec3(1.0f, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-270 * M_PI / 180, vec3(1, 0, 0)) * TranslateMatrix(vec3(0, 0, 0.8f));
 		para->Draw(M, Minv);
 	}
 
 	void DrawFeet(mat4 M, mat4 Minv) {
-		M = ScaleMatrix(vec3(1, 1, 1.2)) * RotationMatrix(90 * M_PI / 180, vec3(1, 0, 0)) * M;
-		Minv = Minv * RotationMatrix(-90 * M_PI / 180, vec3(1, 0, 0)) * ScaleMatrix(vec3(1, 1, 1.2));
+		M = ScaleMatrix(vec3(1.0f, 1.0f, 1.2f)) * RotationMatrix(90 * M_PI / 180, vec3(1.0f, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-90 * M_PI / 180, vec3(1.0f, 0, 0)) * ScaleMatrix(vec3(1.0f, 1.0f, 1.2f));
 		feet->Draw(M, Minv);
 		con->Draw(M, Minv);
 	}
 
-	void DrawArm(mat4 M, mat4 Minv) {
+	void DrawUp(mat4 M, mat4 Minv) {
 		joint->Draw(M, Minv);
 
-		M = RotationMatrix(270 * M_PI / 180, vec3(1, 0, 0)) * M;
-		Minv = Minv * RotationMatrix(-270 * M_PI / 180, vec3(1, 0, 0));
+		M = RotationMatrix(angle * M_PI / 180, vec3(1.0f, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-angle * M_PI / 180, vec3(1.0f, 0, 0));
 		arm->Draw(M, Minv);
+
+		M = TranslateMatrix(vec3(0, 0, 10)) * M;
+		Minv = Minv * TranslateMatrix(-vec3(0, 0, 10));
+		joint->Draw(M, Minv);
+
+		M = RotationMatrix(angle * M_PI / 180, vec3(1.0f, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-angle * M_PI / 180, vec3(1.0f, 0, 0));
+		arm->Draw(M, Minv);
+
+		M = TranslateMatrix(vec3(0, 0, 10)) * M;
+		Minv = Minv * TranslateMatrix(-vec3(0, 0, 10));
+		joint->Draw(M, Minv);
+
+		M = RotationMatrix(angle * M_PI / 180, vec3(1.0f, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-angle * M_PI / 180, vec3(1.0f, 0, 0));
+		para->Draw(M, Minv);
 	}
 
 	void Draw(mat4 M, mat4 Minv) {
-		M = TranslateMatrix(vec3(0, 1.2, 0)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, 1.2, 0));
+		M = TranslateMatrix(vec3(0, 1.2f, 0)) * M;
+		Minv = Minv * TranslateMatrix(-vec3(0, 1.2f, 0));
 		material->SetUniform();
 		DrawFeet(M, Minv);
 
-		M = TranslateMatrix(vec3(0, 1, 0)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, 1, 0));
+		M = TranslateMatrix(vec3(0, 0.8f, 0)) * M;
+		Minv = Minv * TranslateMatrix(-vec3(0, 0.8f, 0));
 		material->SetUniform();
-		DrawArm(M, Minv);
-
-		M = TranslateMatrix(vec3(0, 10, 0)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, 10, 0));
-		material->SetUniform();
-		DrawArm(M, Minv);
-
-		M = TranslateMatrix(vec3(0, 10, 0)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, 10, 0));
-		material->SetUniform();
-		DrawHead(M, Minv);
+		DrawUp(M, Minv);
 	}
 };
 
@@ -403,7 +413,6 @@ public:
 		camera.wVup = vec3(0, 1, 0);
 
 		light.wLightDir = vec3(5, 5, 4);
-
 	}
 	void Render() {
 		camera.SetUniform();
@@ -431,11 +440,11 @@ public:
 		lamp->Animate(dt);
 
 		static float cam_angle = 0;
-		cam_angle += 0.01 * dt;
+		cam_angle += 0.01f * dt;
 
 		const float camera_rad = 30;
 		camera.wEye = vec3(cos(cam_angle) * camera_rad, 10, sin(cam_angle) * camera_rad);
-		camera.wLookat = vec3(0, 10, 0);
+		camera.wLookat = vec3(0, 15, 0);
 	}
 };
 
