@@ -145,9 +145,8 @@ void main() {
     
     float fov = PI / 2;
     
-    vec3 origin = vec3(0, 2.5, 5);
+    vec3 origin = vec3(0, 5, 5);
     vec3 rayDir = normalize(vec3(texCoord * 2 - 1, -tan(fov / 2.0)));
-    //rayDir = (vec4(rayDir, 0) * viewMat).xyz;
     
     vec3 normal;
     float t = intersectWorld(origin, rayDir, normal);
@@ -169,7 +168,7 @@ void main() {
             lightIntensity = 0.0;
         }
         
-        fragColor = vec4(vec3(1, 0s, 0) * cosTheta / pow(distToLight, 2.0) * lightIntensity, 1);
+        fragColor = vec4(vec3(1, 0, 0) * cosTheta / pow(distToLight, 2.0) * lightIntensity, 1);
     } else {
         fragColor = vec4(0, 0, 0, 1);
     }
