@@ -268,16 +268,19 @@ public:
 
 class Paraboloid : public ParamSurface {
 	float r;
+	float height;
 public:
-	Paraboloid(float _r) {
+	Paraboloid(float _r, float _height) {
 		r = _r;
+		height = _height;
 		Create(20, 20);
 	}
 
 	VertexData GenVertexData(float u, float v) {
 		VertexData vd;
-		vd.normal = vec3(u, u*u + v*v, v);
-		vd.position = vd.normal + vec3(0, 0, 0);
+		float U = u * 2 * M_PI, V = v * height;
+		vd.normal = vec3(sqrt(v) * sin(U) * r, sqrt(v) * cos(U) * r, 0);
+		vd.position = vd.normal + vec3(0, 0, V);
 		vd.texcoord = vec2(u, v);
 		return vd;
 	}
@@ -328,14 +331,13 @@ class Lamp {
 public:
 	Lamp(Material* _m) {
 		material = _m;
-		arm = new Cylinder(0.7, 7.0);
-		feet = new Cylinder(7.0, 1.2);
+		arm = new Cylinder(0.7, 10.0);
+		feet = new Cylinder(6.0, 1.2);
 		joint = new Sphere(1.0);
-		con = new Conic(7.0);
-		para = new Paraboloid(4);
+		con = new Conic(6.0);
+		para = new Paraboloid(7.0, 5.0);
 		forward = 0;
 		up = 5;
-
 	}
 	float Forward() { return forward; }
 
@@ -346,6 +348,14 @@ public:
 		else {
 			up -= 2 * dt;
 		}
+	}
+
+	void DrawHead(mat4 M, mat4 Minv) {
+		joint->Draw(M, Minv);
+
+		M = RotationMatrix(270 * M_PI / 180, vec3(1, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-270 * M_PI / 180, vec3(1, 0, 0));
+		para->Draw(M, Minv);
 	}
 
 	void DrawFeet(mat4 M, mat4 Minv) {
@@ -374,19 +384,21 @@ public:
 		material->SetUniform();
 		DrawArm(M, Minv);
 
-		M = TranslateMatrix(vec3(0, 7, 0)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, 7, 0));
+		M = TranslateMatrix(vec3(0, 10, 0)) * M;
+		Minv = Minv * TranslateMatrix(-vec3(0, 10, 0));
 		material->SetUniform();
 		DrawArm(M, Minv);
 
-		M = TranslateMatrix(vec3(0, 8, 0)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, 8, 0));
+		M = TranslateMatrix(vec3(0, 10, 0)) * M;
+		Minv = Minv * TranslateMatrix(-vec3(0, 10, 0));
 		material->SetUniform();
-		para->Draw(M, Minv);
+		DrawHead(M, Minv);
 
+		/*
 		M = TranslateMatrix(vec3(0, up, forward)) * M;
 		Minv = Minv * TranslateMatrix(-vec3(0, up, forward));
-		material->SetUniform();		
+		material->SetUniform();
+		*/
 	}
 };
 
@@ -453,7 +465,7 @@ public:
 
 		const float camera_rad = 30;
 		camera.wEye = vec3(cos(cam_angle) * camera_rad, 10, sin(cam_angle) * camera_rad);
-		camera.wLookat = vec3(0, 0, 0);
+		camera.wLookat = vec3(0, 10, 0);
 	}
 };
 
