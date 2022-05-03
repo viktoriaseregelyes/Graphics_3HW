@@ -286,34 +286,14 @@ public:
 	}
 };
 
-class Quad : public ParamSurface {
-	float size;
-public:
-	Quad() {
-		size = 100;
-		Create(20, 20);
-	}
-
-	VertexData GenVertexData(float u, float v) {
-		VertexData vd;
-		vd.normal = vec3(0, 1, 0);
-		vd.position = vec3((u - 0.5) * 2, 0, (v - 0.5) * 2) * size;
-		vd.texcoord = vec2(u, v);
-		return vd;
-	}
-};
-
 class Floor {
 	Material* material;
-	Geometry* quad;
 public:
 	Floor(Material* _m) {
 		material = _m;
-		quad = new Quad();
 	}
 	void Draw(mat4 M, mat4 Minv) {
 		material->SetUniform();
-		quad->Draw(M, Minv);
 	}
 };
 
@@ -332,7 +312,7 @@ public:
 	Lamp(Material* _m) {
 		material = _m;
 		arm = new Cylinder(0.7, 10.0);
-		feet = new Cylinder(6.0, 1.2);
+		feet = new Cylinder(6.0, 1);
 		joint = new Sphere(1.0);
 		con = new Conic(6.0);
 		para = new Paraboloid(7.0, 5.0);
@@ -393,12 +373,6 @@ public:
 		Minv = Minv * TranslateMatrix(-vec3(0, 10, 0));
 		material->SetUniform();
 		DrawHead(M, Minv);
-
-		/*
-		M = TranslateMatrix(vec3(0, up, forward)) * M;
-		Minv = Minv * TranslateMatrix(-vec3(0, up, forward));
-		material->SetUniform();
-		*/
 	}
 };
 
@@ -409,9 +383,8 @@ public:
 	Light light;
 
 	void Build() {
-		// Materials
 		Material *material0 = new Material;
-		material0->kd = vec3(0.2f, 0.3f, 1);
+		material0->kd = vec3(0.21f, 0.23f, 0.25f);
 		material0->ks = vec3(1, 1, 1);
 		material0->ka = vec3(0.2f, 0.3f, 1);
 		material0->shininess = 20;
@@ -422,16 +395,13 @@ public:
 		material1->ka = vec3(0.2f, 0.2f, 0.2f);
 		material1->shininess = 200;
 
-		// Geometries
 		lamp = new Lamp(material0);
 		floor = new Floor(material1);
 
-		// Camera
 		camera.wEye = vec3(0, 0, 4);
 		camera.wLookat = vec3(0, 0, 0);
 		camera.wVup = vec3(0, 1, 0);
 
-		// Light
 		light.wLightDir = vec3(5, 5, 4);
 
 	}
@@ -447,9 +417,9 @@ public:
 		light.SetUniform(false);
 
 		mat4 shadowMatrix = { 1, 0, 0, 0,
-			-light.wLightDir.x / light.wLightDir.y, 0, -light.wLightDir.z / light.wLightDir.y, 0,
-			0, 0, 1, 0,
-			0, 0.001f, 0, 1 };
+							  -light.wLightDir.x / light.wLightDir.y, 0, -light.wLightDir.z / light.wLightDir.y, 0,
+							  0, 0, 1, 0,
+							  0, 0.001f, 0, 1 };
 		lamp->Draw(shadowMatrix, shadowMatrix);
 	}
 
@@ -461,14 +431,13 @@ public:
 		lamp->Animate(dt);
 
 		static float cam_angle = 0;
-		cam_angle += 0.01 * dt;			// camera rotate
+		cam_angle += 0.01 * dt;
 
 		const float camera_rad = 30;
 		camera.wEye = vec3(cos(cam_angle) * camera_rad, 10, sin(cam_angle) * camera_rad);
 		camera.wLookat = vec3(0, 10, 0);
 	}
 };
-
 
 unsigned int vao;
 Scene scene;
@@ -483,7 +452,7 @@ void onInitialization() {
 }
 
 void onDisplay() {
-	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);
+	glClearColor(0.37f, 0.27f, 0.25f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	scene.Render();
 	glutSwapBuffers();
