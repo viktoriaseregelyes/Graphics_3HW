@@ -305,10 +305,15 @@ class Lamp {
 	Conic* con;
 	Paraboloid* para;
 
-	float forward, up;
-	float angle = 200;
-	boolean bAngle = false;
-
+	float angleDown = 270;
+	boolean aDown = false;
+	float angleUp = 340;
+	boolean aUp = false;
+	float angleHead = 300;
+	boolean aHead = false;
+	float angleFull = 300;
+	boolean aFull = false;
+	
 public:
 	Lamp(Material* _m) {
 		material = _m;
@@ -317,20 +322,70 @@ public:
 		joint = new Sphere(0.8f);
 		con = new Conic(6.0f);
 		para = new Paraboloid(4.0f, 3.0f);
-		forward = 0;
-		up = 5;
 	}
 
 	void Animate(float dt) {
-		if (!bAngle && angle < 340) {
-			angle += dt;
-			if(angle >= 340)
-				bAngle = true;
+		if (!aDown) {
+			angleDown += dt;
+			AngleUp(dt);
+			if (angleDown >= 360) {
+				aDown = true;
+			}
 		}
-		else if(bAngle && angle > 200) {
-			angle -= dt;
-			if (angle <= 200)
-				bAngle = false;
+		else if (aDown) {
+			angleDown -= dt;
+			AngleUp(dt);
+			if (angleDown <= 240) {
+				aDown = false;
+			}
+		}
+		AngleFull(dt);
+	}
+
+	void AngleUp(float dt) {
+		if (!aUp) {
+			angleUp += dt;
+			AngleHead(dt);
+			if (angleUp >= 360) {
+				aUp = true;
+			}
+		}
+		else if (aUp) {
+			angleUp -= dt;
+			AngleHead(dt);
+			if (angleUp <= 240) {
+				aUp = false;
+			}
+		}
+	}
+
+	void AngleHead(float dt) {
+		if (!aHead) {
+			angleHead += dt;
+			if (angleHead >= 360) {
+				aHead = true;
+			}
+		}
+		else if (aHead) {
+			angleHead -= dt;
+			if (angleHead <= 240) {
+				aHead = false;
+			}
+		}
+	}
+
+	void AngleFull(float dt) {
+		if (!aFull) {
+			angleFull += dt;
+			if (angleFull >= 300) {
+				aFull = true;
+			}
+		}
+		else if (aFull) {
+			angleFull -= dt;
+			if (angleFull <= 300) {
+				aFull = false;
+			}
 		}
 	}
 
@@ -350,26 +405,29 @@ public:
 	}
 
 	void DrawUp(mat4 M, mat4 Minv) {
+		//light.wLightDir = vec3(5, 5, 4);
+		//light.SetUniform(true);
+
 		joint->Draw(M, Minv);
 
-		M = RotationMatrix(angle * M_PI / 180, vec3(1.0f, 0, 0)) * M;
-		Minv = Minv * RotationMatrix(-angle * M_PI / 180, vec3(1.0f, 0, 0));
+		M = RotationMatrix(angleDown * M_PI / 180, vec3(1.0f, 0, 0)) * M;
+		Minv = Minv * RotationMatrix(-angleDown * M_PI / 180, vec3(1.0f, 0, 0));
 		arm->Draw(M, Minv);
 
 		M = TranslateMatrix(vec3(0, 0, 10)) * M;
 		Minv = Minv * TranslateMatrix(-vec3(0, 0, 10));
 		joint->Draw(M, Minv);
 
-		M = RotationMatrix(angle * M_PI / 180, vec3(1.0f, 0, 0)) * M;
-		Minv = Minv * RotationMatrix(-angle * M_PI / 180, vec3(1.0f, 0, 0));
+		M = RotationMatrix(angleUp * M_PI / 180, vec3(1.0f, 0, 0)) * RotationMatrix(angleFull * M_PI / 180, vec3(0, 1.0f, 0)) * M;
+		Minv = Minv * RotationMatrix(-angleUp * M_PI / 180, vec3(1.0f, 0, 0)) * RotationMatrix(-angleFull * M_PI / 180, vec3(0, 1.0f, 0));
 		arm->Draw(M, Minv);
 
 		M = TranslateMatrix(vec3(0, 0, 10)) * M;
 		Minv = Minv * TranslateMatrix(-vec3(0, 0, 10));
 		joint->Draw(M, Minv);
 
-		M = RotationMatrix(angle * M_PI / 180, vec3(1.0f, 0, 0)) * M;
-		Minv = Minv * RotationMatrix(-angle * M_PI / 180, vec3(1.0f, 0, 0));
+		M = RotationMatrix(angleHead * M_PI / 180, vec3(1.0f, 0, 0)) * RotationMatrix(angleFull * M_PI / 180, vec3(0, 1.0f, 0)) * M;
+		Minv = Minv * RotationMatrix(-angleHead * M_PI / 180, vec3(1.0f, 0, 0)) * RotationMatrix(-angleFull * M_PI / 180, vec3(0, 1.0f, 0));
 		para->Draw(M, Minv);
 	}
 
@@ -391,6 +449,7 @@ class Scene {
 	Floor *floor;
 public:
 	Light light;
+	Light lamp_light;
 
 	void Build() {
 		Material *material0 = new Material;
@@ -415,6 +474,8 @@ public:
 		light.wLightDir = vec3(5, 5, 4);
 	}
 	void Render() {
+		lamp_light.wLightDir = vec3(0, 10, 0);
+
 		camera.SetUniform();
 		light.SetUniform(true);
 
@@ -430,6 +491,16 @@ public:
 							  0, 0, 1, 0,
 							  0, 0.001f, 0, 1 };
 		lamp->Draw(shadowMatrix, shadowMatrix);
+
+		lamp_light.SetUniform(true);
+
+		lamp_light.SetUniform(false);
+
+		mat4 shadowMatrix2 = { 1, 0, 0, 0,
+							  -lamp_light.wLightDir.x / lamp_light.wLightDir.y, 0, -lamp_light.wLightDir.z / lamp_light.wLightDir.y, 0,
+							  0, 0, 1, 0,
+							  0, 0.001f, 0, 1 };
+		lamp->Draw(shadowMatrix2, shadowMatrix2);
 	}
 
 	void Animate(float t) {
@@ -442,8 +513,8 @@ public:
 		static float cam_angle = 0;
 		cam_angle += 0.01f * dt;
 
-		const float camera_rad = 30;
-		camera.wEye = vec3(cos(cam_angle) * camera_rad, 10, sin(cam_angle) * camera_rad);
+		const float camera_rad = 35;
+		camera.wEye = vec3(cos(cam_angle) * camera_rad, 15, sin(cam_angle) * camera_rad);
 		camera.wLookat = vec3(0, 15, 0);
 	}
 };
