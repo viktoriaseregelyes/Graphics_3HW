@@ -147,6 +147,7 @@ void main() {
     
     vec3 origin = vec3(0, 5, 5);
     vec3 rayDir = normalize(vec3(texCoord * 2 - 1, -tan(fov / 2.0)));
+    //rayDir = (vec4(rayDir, 0) * viewMat).xyz;
     
     vec3 normal;
     float t = intersectWorld(origin, rayDir, normal);
