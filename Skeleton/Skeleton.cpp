@@ -77,16 +77,12 @@ void onInitialization() {
     gpuProgram.create(vertexSource, fragmentSource, "outColor");
 }
 
-// LEADAS ELOTT VEDD KI
 #include <fstream>
 #include <sstream>
-// VEGE
 
 void onDisplay() {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    // LEADAS ELOTT VEDD KI
 
     std::string newVertexSrc;
     std::string newFragmentSrc;
@@ -104,8 +100,6 @@ void onDisplay() {
 
     GPUProgram gpuProgram(false);
     gpuProgram.create(newVertexSrc.c_str(), newFragmentSrc.c_str(), "outColor");
-
-    // VEGE
 
     gpuProgram.setUniform((float)frame, "frame");
     frame++;
