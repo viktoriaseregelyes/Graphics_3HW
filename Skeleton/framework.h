@@ -19,8 +19,8 @@
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #include <windows.h>
 #endif
-#include <GL/glew.h>		// must be downloaded
-#include <GL/freeglut.h>	// must be downloaded unless you have an Apple
+#include "C:\Users\User\Desktop\Downloads\glew32\glew-2.1.0\include\GL\glew.h"		// must be downloaded
+#include "C:\Users\User\Desktop\Downloads\freeglut-3.4.0\freeglut-3.4.0\include\GL\freeglut.h"	// must be downloaded unless you have an Apple
 #endif
 
 // Resolution of screen
